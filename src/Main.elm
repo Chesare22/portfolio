@@ -1,8 +1,9 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
+import Html.Styled exposing (..)
+import Html.Styled.Attributes as Attributes
+
 
 
 ---- MODEL ----
@@ -37,7 +38,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
+        [ img [ Attributes.src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
         ]
 
@@ -49,7 +50,7 @@ view model =
 main : Program () Model Msg
 main =
     Browser.element
-        { view = view
+        { view = view >> toUnstyled
         , init = \_ -> init
         , update = update
         , subscriptions = always Sub.none
