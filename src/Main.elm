@@ -1,6 +1,8 @@
 module Main exposing (..)
 
 import Browser
+import Css exposing (..)
+import Css.Global as Global
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
 
@@ -171,12 +173,30 @@ miscelaneous =
 
 
 type alias Model =
-    { carousels : List Carousel }
+    { carousels : List Carousel
+    , fonts : Fonts
+    }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { carousels = [] }, Cmd.none )
+type alias Fonts =
+    { dinLight : String
+    , dinRegular : String
+    , dinBold : String
+    , regloBold : String
+    }
+
+
+type alias Flags =
+    { fonts : Fonts }
+
+
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { carousels = []
+      , fonts = flags.fonts
+      }
+    , Cmd.none
+    )
 
 
 
@@ -196,10 +216,73 @@ update msg model =
 ---- VIEW ----
 
 
+type FontExtension
+    = Woff
+    | Otf
+    | Ttf
+
+
+type alias LocalFontfaceParams =
+    { name : String
+    , url : String
+    , extension : FontExtension
+    }
+
+
+localFontface : List Style -> LocalFontfaceParams -> Global.Snippet
+localFontface styles { name, url, extension } =
+    Global.selector "@font-face"
+        ([ fontFamilies [ name ]
+         , property "src"
+            ("local(\""
+                ++ name
+                ++ "\"),"
+                ++ "url(\""
+                ++ url
+                ++ "\") format(\""
+                ++ (case extension of
+                        Woff ->
+                            "woff"
+
+                        Otf ->
+                            "opentype"
+
+                        Ttf ->
+                            "truetype"
+                   )
+                ++ "\")"
+            )
+         ]
+            ++ styles
+        )
+
+
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text "Your Elm App is working!" ]
+        [ Global.global
+            [ localFontface [ fontWeight (int 300) ]
+                { name = "DIN"
+                , url = model.fonts.dinLight
+                , extension = Woff
+                }
+            , localFontface [ fontWeight (int 400) ]
+                { name = "DIN"
+                , url = model.fonts.dinRegular
+                , extension = Woff
+                }
+            , localFontface [ fontWeight (int 700) ]
+                { name = "DIN"
+                , url = model.fonts.dinBold
+                , extension = Woff
+                }
+            , localFontface [ fontWeight (int 700) ]
+                { name = "Reglo"
+                , url = model.fonts.regloBold
+                , extension = Otf
+                }
+            ]
+        , h1 [] [ text "Your Elm App is working!" ]
         ]
 
 
@@ -207,11 +290,11 @@ view model =
 ---- PROGRAM ----
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { view = view >> toUnstyled
-        , init = \_ -> init
+        , init = init
         , update = update
         , subscriptions = always Sub.none
         }
