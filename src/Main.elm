@@ -7,7 +7,11 @@ import Dict
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
+import Material.Icons
+import Material.Icons.Types exposing (Coloring(..))
+import Svg.Styled
 import Time
+import UI.Palette
 
 
 
@@ -364,14 +368,17 @@ viewCarousel carouselScrolls carousel =
             , zIndex (int 100)
             , left (pct 100)
             , transform (translateX (pct -100))
-            , width (rem 5)
+            , width (rem 8)
             , height (pct 100)
-            , backgroundColor (hex "#fff")
+            , backgroundImage (linearGradient2 toRight (stop UI.Palette.grey.c050) (stop UI.Palette.grey.c400) [])
+            , property "display" "grid"
+            , property "place-items" "center"
             ]
             [ Events.onMouseEnter (StartMoving carousel.title Right)
             , Events.onMouseLeave StopMoving
             ]
-            []
+            [ Svg.Styled.fromUnstyled (Material.Icons.keyboard_arrow_right 30 Inherit)
+            ]
 
         -- Carousel track
         , styled div
