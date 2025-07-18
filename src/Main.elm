@@ -262,7 +262,11 @@ localFontface styles { name, url, extension } =
 
 view : Model -> Html Msg
 view model =
-    div []
+    styled div
+        [ maxWidth (pct 100)
+        , padding2 zero (rem 1)
+        ]
+        []
         (List.concat
             [ [ Global.global
                     [ localFontface [ fontWeight (int 300) ]
