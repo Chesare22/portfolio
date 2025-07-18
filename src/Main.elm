@@ -3,9 +3,11 @@ module Main exposing (..)
 import Browser
 import Css exposing (..)
 import Css.Global as Global
-import Css.Transitions exposing (columnGap)
+import Dict
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
+import Html.Styled.Events as Events
+import Time
 
 
 
@@ -173,9 +175,15 @@ miscelaneous =
     }
 
 
+type Direction
+    = Left
+    | Right
+
+
 type alias Model =
-    { carousels : List Carousel
-    , fonts : Fonts
+    { fonts : Fonts
+    , carouselScrolls : Dict.Dict String Float
+    , movingCarousel : Maybe ( String, Direction )
     }
 
 
@@ -191,12 +199,20 @@ type alias Flags =
     { fonts : Fonts }
 
 
+carousels : List Carousel
+carousels =
+    [ applications ]
+
+
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { carousels =
-            [ applications
-            ]
+    ( { carouselScrolls =
+            carousels
+                |> List.map .title
+                |> List.map (\title -> Tuple.pair title 0)
+                |> Dict.fromList
       , fonts = flags.fonts
+      , movingCarousel = Nothing
       }
     , Cmd.none
     )
@@ -207,12 +223,38 @@ init flags =
 
 
 type Msg
-    = NoOp
+    = StartMoving String Direction
+    | StopMoving
+    | MoveCarousel String Direction Time.Posix
+
+
+updateDirection : Direction -> Float -> Float
+updateDirection direction currentOffset =
+    case direction of
+        Right ->
+            currentOffset - 10
+
+        Left ->
+            currentOffset + 10
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        StartMoving carouselTitle direction ->
+            ( { model | movingCarousel = Just ( carouselTitle, direction ) }, Cmd.none )
+
+        StopMoving ->
+            ( { model | movingCarousel = Nothing }, Cmd.none )
+
+        MoveCarousel carouselTitle direction _ ->
+            ( { model
+                | carouselScrolls =
+                    model.carouselScrolls
+                        |> Dict.update carouselTitle (Maybe.map (updateDirection direction))
+              }
+            , Cmd.none
+            )
 
 
 
@@ -292,23 +334,57 @@ view model =
                     ]
               , h1 [] [ text "César's Portfolio" ]
               ]
-            , model.carousels
-                |> List.map viewCarousel
+            , carousels
+                |> List.map (viewCarousel model.carouselScrolls)
                 |> List.concat
             ]
         )
 
 
-viewCarousel : Carousel -> List (Html Msg)
-viewCarousel carousel =
+viewCarousel : Dict.Dict String Float -> Carousel -> List (Html Msg)
+viewCarousel carouselScrolls carousel =
+    let
+        carouselOffset : Float
+        carouselOffset =
+            carouselScrolls
+                |> Dict.get carousel.title
+                |> Maybe.withDefault 0
+    in
     [ h2 [] [ text carousel.title ]
+
+    -- Carousel wrapper
     , styled div
-        [ displayFlex
-        , alignItems flexStart
-        , property "column-gap" "1rem"
+        [ position relative
+        , overflow hidden
         ]
         []
-        (carousel.slides |> List.map viewSlide)
+        -- Carousel controls
+        [ styled div
+            [ position absolute
+            , zIndex (int 100)
+            , left (pct 100)
+            , transform (translateX (pct -100))
+            , width (rem 5)
+            , height (pct 100)
+            , backgroundColor (hex "#fff")
+            ]
+            [ Events.onMouseEnter (StartMoving carousel.title Right)
+            , Events.onMouseLeave StopMoving
+            ]
+            []
+
+        -- Carousel track
+        , styled div
+            [ displayFlex
+            , alignItems flexStart
+            , property "column-gap" "1rem"
+            , position relative
+            , transform (translateX (px carouselOffset))
+            , zIndex (int 50)
+            ]
+            []
+            (carousel.slides |> List.map viewSlide)
+        ]
     ]
 
 
@@ -333,6 +409,20 @@ viewSlide { name, image } =
 
 
 
+---- SUBSCRIPTIONS ----
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.movingCarousel of
+        Nothing ->
+            Sub.none
+
+        Just ( carouselTitle, direction ) ->
+            Time.every 100 (MoveCarousel carouselTitle direction)
+
+
+
 ---- PROGRAM ----
 
 
@@ -342,5 +432,5 @@ main =
         { view = view >> toUnstyled
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
