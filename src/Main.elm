@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Css exposing (..)
 import Css.Global as Global
+import Css.Transitions exposing (columnGap)
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
 
@@ -192,7 +193,9 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { carousels = []
+    ( { carousels =
+            [ applications
+            ]
       , fonts = flags.fonts
       }
     , Cmd.none
@@ -260,29 +263,68 @@ localFontface styles { name, url, extension } =
 view : Model -> Html Msg
 view model =
     div []
-        [ Global.global
-            [ localFontface [ fontWeight (int 300) ]
-                { name = "DIN"
-                , url = model.fonts.dinLight
-                , extension = Woff
-                }
-            , localFontface [ fontWeight (int 400) ]
-                { name = "DIN"
-                , url = model.fonts.dinRegular
-                , extension = Woff
-                }
-            , localFontface [ fontWeight (int 700) ]
-                { name = "DIN"
-                , url = model.fonts.dinBold
-                , extension = Woff
-                }
-            , localFontface [ fontWeight (int 700) ]
-                { name = "Reglo"
-                , url = model.fonts.regloBold
-                , extension = Otf
-                }
+        (List.concat
+            [ [ Global.global
+                    [ localFontface [ fontWeight (int 300) ]
+                        { name = "DIN"
+                        , url = model.fonts.dinLight
+                        , extension = Woff
+                        }
+                    , localFontface [ fontWeight (int 400) ]
+                        { name = "DIN"
+                        , url = model.fonts.dinRegular
+                        , extension = Woff
+                        }
+                    , localFontface [ fontWeight (int 700) ]
+                        { name = "DIN"
+                        , url = model.fonts.dinBold
+                        , extension = Woff
+                        }
+                    , localFontface [ fontWeight (int 700) ]
+                        { name = "Reglo"
+                        , url = model.fonts.regloBold
+                        , extension = Otf
+                        }
+                    ]
+              , h1 [] [ text "César's Portfolio" ]
+              ]
+            , model.carousels
+                |> List.map viewCarousel
+                |> List.concat
             ]
-        , h1 [] [ text "Your Elm App is working!" ]
+        )
+
+
+viewCarousel : Carousel -> List (Html Msg)
+viewCarousel carousel =
+    [ h2 [] [ text carousel.title ]
+    , styled div
+        [ displayFlex
+        , alignItems flexStart
+        , property "column-gap" "1rem"
+        ]
+        []
+        (carousel.slides |> List.map viewSlide)
+    ]
+
+
+viewSlide : CarouselSlide -> Html Msg
+viewSlide { name, image } =
+    styled div
+        [ position relative
+        ]
+        []
+        [ styled img
+            [ width (rem 17.5)
+            , property "object-fit" "cover"
+            ]
+            [ Attributes.src image ]
+            []
+        , styled p
+            [ position absolute
+            ]
+            []
+            [ text name ]
         ]
 
 
