@@ -382,6 +382,22 @@ viewCarousel carousel =
             ]
             [ Svg.Styled.fromUnstyled (Material.Icons.keyboard_arrow_right 30 Inherit)
             ]
+        , styled div
+            [ position absolute
+            , zIndex (int 100)
+            , left zero
+            , width (rem 8)
+            , height (pct 100)
+            , backgroundImage (linearGradient2 toLeft (stop UI.Palette.grey.c050) (stop UI.Palette.grey.c400) [])
+            , opacity (num 0.98)
+            , property "display" "grid"
+            , property "place-items" "center"
+            ]
+            [ Events.onMouseEnter (StartMoving carousel.title Left)
+            , Events.onMouseLeave StopMoving
+            ]
+            [ Svg.Styled.fromUnstyled (Material.Icons.keyboard_arrow_left 30 Inherit)
+            ]
 
         -- Carousel track
         , styled div
