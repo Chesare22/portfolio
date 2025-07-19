@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Css exposing (..)
@@ -186,7 +186,6 @@ type Direction
 
 type alias Model =
     { fonts : Fonts
-    , carouselScrolls : Dict.Dict String Float
     , movingCarousel : Maybe ( String, Direction )
     }
 
@@ -210,16 +209,32 @@ carousels =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { carouselScrolls =
-            carousels
-                |> List.map .title
-                |> List.map (\title -> Tuple.pair title 0)
-                |> Dict.fromList
-      , fonts = flags.fonts
+    ( { fonts = flags.fonts
       , movingCarousel = Nothing
       }
     , Cmd.none
     )
+
+
+
+---- PORTS ----
+
+
+port scrollCarousel : ( String, Float ) -> Cmd msg
+
+
+
+---- SUBSCRIPTIONS ----
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.movingCarousel of
+        Nothing ->
+            Sub.none
+
+        Just ( carouselTitle, direction ) ->
+            Time.every 100 (MoveCarousel carouselTitle direction)
 
 
 
@@ -232,16 +247,6 @@ type Msg
     | MoveCarousel String Direction Time.Posix
 
 
-updateDirection : Direction -> Float -> Float
-updateDirection direction currentOffset =
-    case direction of
-        Right ->
-            currentOffset - 10
-
-        Left ->
-            currentOffset + 10
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -252,12 +257,16 @@ update msg model =
             ( { model | movingCarousel = Nothing }, Cmd.none )
 
         MoveCarousel carouselTitle direction _ ->
-            ( { model
-                | carouselScrolls =
-                    model.carouselScrolls
-                        |> Dict.update carouselTitle (Maybe.map (updateDirection direction))
-              }
-            , Cmd.none
+            ( model
+            , scrollCarousel
+                ( carouselTitle
+                , case direction of
+                    Right ->
+                        20
+
+                    Left ->
+                        -20
+                )
             )
 
 
@@ -339,21 +348,14 @@ view model =
               , h1 [] [ text "César's Portfolio" ]
               ]
             , carousels
-                |> List.map (viewCarousel model.carouselScrolls)
+                |> List.map viewCarousel
                 |> List.concat
             ]
         )
 
 
-viewCarousel : Dict.Dict String Float -> Carousel -> List (Html Msg)
-viewCarousel carouselScrolls carousel =
-    let
-        carouselOffset : Float
-        carouselOffset =
-            carouselScrolls
-                |> Dict.get carousel.title
-                |> Maybe.withDefault 0
-    in
+viewCarousel : Carousel -> List (Html Msg)
+viewCarousel carousel =
     [ h2 [] [ text carousel.title ]
 
     -- Carousel wrapper
@@ -371,6 +373,7 @@ viewCarousel carouselScrolls carousel =
             , width (rem 8)
             , height (pct 100)
             , backgroundImage (linearGradient2 toRight (stop UI.Palette.grey.c050) (stop UI.Palette.grey.c400) [])
+            , opacity (num 0.98)
             , property "display" "grid"
             , property "place-items" "center"
             ]
@@ -386,10 +389,12 @@ viewCarousel carouselScrolls carousel =
             , alignItems flexStart
             , property "column-gap" "1rem"
             , position relative
-            , transform (translateX (px carouselOffset))
             , zIndex (int 50)
+            , width (pct 100)
+            , overflowX scroll
+            , overflowY hidden
             ]
-            []
+            [ Attributes.id carousel.title ]
             (carousel.slides |> List.map viewSlide)
         ]
     ]
@@ -413,20 +418,6 @@ viewSlide { name, image } =
             []
             [ text name ]
         ]
-
-
-
----- SUBSCRIPTIONS ----
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    case model.movingCarousel of
-        Nothing ->
-            Sub.none
-
-        Just ( carouselTitle, direction ) ->
-            Time.every 100 (MoveCarousel carouselTitle direction)
 
 
 
