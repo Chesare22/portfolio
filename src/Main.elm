@@ -1,14 +1,18 @@
 port module Main exposing (..)
 
 import Browser
+import Browser.Events
 import Css exposing (..)
 import Css.Global as Global
 import Dict
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
+import Json.Decode as D
+import Json.Encode as E
 import Material.Icons
 import Material.Icons.Types exposing (Coloring(..))
+import Platform.Sub as Sub
 import Svg.Styled
 import Time
 import UI.Palette
@@ -184,9 +188,16 @@ type Direction
     | Right
 
 
+type alias ScrollButtonsVisibility =
+    { left : Bool
+    , right : Bool
+    }
+
+
 type alias Model =
     { fonts : Fonts
     , movingCarousel : Maybe ( String, Direction )
+    , scrollButtonsVisibilities : Dict.Dict String ScrollButtonsVisibility
     }
 
 
@@ -211,8 +222,9 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { fonts = flags.fonts
       , movingCarousel = Nothing
+      , scrollButtonsVisibilities = Dict.empty
       }
-    , Cmd.none
+    , requestScrollButtonsVisibility (carousels |> List.map .title)
     )
 
 
@@ -223,18 +235,28 @@ init flags =
 port scrollCarousel : ( String, Float ) -> Cmd msg
 
 
+port requestScrollButtonsVisibility : List String -> Cmd msg
+
+
+port updateScrollButtonsVisibility : (E.Value -> msg) -> Sub msg
+
+
 
 ---- SUBSCRIPTIONS ----
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.movingCarousel of
-        Nothing ->
-            Sub.none
+    Sub.batch
+        [ case model.movingCarousel of
+            Nothing ->
+                Sub.none
 
-        Just ( carouselTitle, direction ) ->
-            Time.every 100 (MoveCarousel carouselTitle direction)
+            Just ( carouselTitle, direction ) ->
+                Time.every 100 (MoveCarousel carouselTitle direction)
+        , Browser.Events.onResize (always (always RequestScrollButtonsVisibility))
+        , updateScrollButtonsVisibility UpdateScrollButtonsVisibility
+        ]
 
 
 
@@ -245,6 +267,8 @@ type Msg
     = StartMoving String Direction
     | StopMoving
     | MoveCarousel String Direction Time.Posix
+    | RequestScrollButtonsVisibility
+    | UpdateScrollButtonsVisibility E.Value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -268,6 +292,30 @@ update msg model =
                         -20
                 )
             )
+
+        RequestScrollButtonsVisibility ->
+            ( model
+            , requestScrollButtonsVisibility (carousels |> List.map .title)
+            )
+
+        UpdateScrollButtonsVisibility value ->
+            ( { model
+                | scrollButtonsVisibilities =
+                    value
+                        |> D.decodeValue decodeButtonVisibility
+                        |> Result.withDefault model.scrollButtonsVisibilities
+              }
+            , Cmd.none
+            )
+
+
+decodeButtonVisibility : D.Decoder (Dict.Dict String ScrollButtonsVisibility)
+decodeButtonVisibility =
+    D.dict
+        (D.map2 ScrollButtonsVisibility
+            (D.field "left" D.bool)
+            (D.field "right" D.bool)
+        )
 
 
 
@@ -348,14 +396,29 @@ view model =
               , h1 [] [ text "César's Portfolio" ]
               ]
             , carousels
-                |> List.map viewCarousel
+                |> List.map (viewCarousel model.scrollButtonsVisibilities)
                 |> List.concat
             ]
         )
 
 
-viewCarousel : Carousel -> List (Html Msg)
-viewCarousel carousel =
+isButtonVisible : String -> Direction -> Dict.Dict String ScrollButtonsVisibility -> Bool
+isButtonVisible carouselId direction scrollButtonsVisibilities =
+    scrollButtonsVisibilities
+        |> Dict.get carouselId
+        |> Maybe.map
+            (case direction of
+                Left ->
+                    .left
+
+                Right ->
+                    .right
+            )
+        |> Maybe.withDefault False
+
+
+viewCarousel : Dict.Dict String ScrollButtonsVisibility -> Carousel -> List (Html Msg)
+viewCarousel scrollButtonsVisibilities carousel =
     [ h2 [] [ text carousel.title ]
 
     -- Carousel wrapper
@@ -374,7 +437,13 @@ viewCarousel carousel =
             , height (pct 100)
             , backgroundImage (linearGradient2 toRight (stop UI.Palette.grey.c050) (stop UI.Palette.grey.c400) [])
             , opacity (num 0.98)
-            , property "display" "grid"
+            , property "display"
+                (if isButtonVisible carousel.title Right scrollButtonsVisibilities then
+                    "grid"
+
+                 else
+                    "none"
+                )
             , property "place-items" "center"
             ]
             [ Events.onMouseEnter (StartMoving carousel.title Right)
@@ -390,7 +459,13 @@ viewCarousel carousel =
             , height (pct 100)
             , backgroundImage (linearGradient2 toLeft (stop UI.Palette.grey.c050) (stop UI.Palette.grey.c400) [])
             , opacity (num 0.98)
-            , property "display" "grid"
+            , property "display"
+                (if isButtonVisible carousel.title Left scrollButtonsVisibilities then
+                    "grid"
+
+                 else
+                    "none"
+                )
             , property "place-items" "center"
             ]
             [ Events.onMouseEnter (StartMoving carousel.title Left)
@@ -410,7 +485,9 @@ viewCarousel carousel =
             , overflowX scroll
             , overflowY hidden
             ]
-            [ Attributes.id carousel.title ]
+            [ Attributes.id carousel.title
+            , Events.on "scroll" (D.succeed RequestScrollButtonsVisibility)
+            ]
             (carousel.slides |> List.map viewSlide)
         ]
     ]

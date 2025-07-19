@@ -18,6 +18,7 @@ const app = Elm.Main.init({
   },
 });
 
+
 app.ports.scrollCarousel.subscribe(([carouselId, distance]) => {
   const carouselElement = document.getElementById(carouselId)
   carouselElement.scroll({
@@ -25,6 +26,25 @@ app.ports.scrollCarousel.subscribe(([carouselId, distance]) => {
     behavior: 'smooth'
   })
 })
+
+
+app.ports.requestScrollButtonsVisibility.subscribe((carouselIds) => {
+  const buttonVisibilities = Object.fromEntries(carouselIds.map((carouselId) => {
+    const carouselElement = document.getElementById(carouselId)
+    const minScroll = 0
+    const maxScroll = carouselElement.scrollWidth - carouselElement.clientWidth
+
+    return [
+      carouselId,
+      {
+        left: carouselElement.scrollLeft > minScroll,
+        right: carouselElement.scrollLeft < maxScroll,
+      },
+    ];
+  }));
+
+  app.ports.updateScrollButtonsVisibility.send(buttonVisibilities);
+});
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
