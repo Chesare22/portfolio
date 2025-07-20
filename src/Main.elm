@@ -484,6 +484,7 @@ viewCarousel scrollButtonsVisibilities carousel =
             , width (pct 100)
             , overflowX scroll
             , overflowY hidden
+            , pseudoElement "-webkit-scrollbar" [ display none ]
             ]
             [ Attributes.id carousel.title
             , Events.on "scroll" (D.succeed RequestScrollButtonsVisibility)
