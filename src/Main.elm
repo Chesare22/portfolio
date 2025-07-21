@@ -424,7 +424,13 @@ isButtonVisible carouselId direction scrollButtonsVisibilities =
 
 viewCarousel : Dict.Dict String ScrollButtonsVisibility -> Carousel -> List (Html Msg)
 viewCarousel scrollButtonsVisibilities carousel =
-    [ h2 [] [ text carousel.title ]
+    [ styled div
+        [ borderTop3 (px 1) solid UI.Palette.grey.c800
+        , margin2 (rem 1.6) zero
+        ]
+        []
+        []
+    , h2 [] [ text carousel.title ]
 
     -- Carousel wrapper
     , styled div
