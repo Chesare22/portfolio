@@ -68,15 +68,15 @@ cliHelpers =
     { title = "Small commands"
     , slides =
         [ { name = "Shuffle textlines"
-          , image = ""
+          , image = "/images/JavaScript.png"
           , url = "https://github.com/Chesare22/shuffle-textlines.js"
           }
         , { name = "Sum-to"
-          , image = ""
+          , image = "/images/JavaScript.png"
           , url = "https://github.com/Chesare22/sum-to"
           }
         , { name = "Mask"
-          , image = ""
+          , image = "/images/Elixir.png"
           , url = "https://github.com/Chesare22/mask"
           }
         ]
@@ -88,19 +88,19 @@ libraries =
     { title = "Libraries"
     , slides =
         [ { name = "Custom types"
-          , image = ""
+          , image = "/images/JavaScript.png"
           , url = ""
           }
         , { name = "Controlled collumns"
-          , image = ""
+          , image = "/images/Ant Design.png"
           , url = ""
           }
         , { name = "Parser combinators"
-          , image = ""
+          , image = "/images/php.png"
           , url = ""
           }
         , { name = "ESLint config"
-          , image = ""
+          , image = "/images/ESLint.png"
           , url = ""
           }
         ]
@@ -112,31 +112,31 @@ schoolProjects =
     { title = "School projects"
     , slides =
         [ { name = "MVC votes system"
-          , image = ""
+          , image = "/images/Java.png"
           , url = "https://github.com/Chesare22/Semestre-5/tree/arquitectura/Votes/src/main/java"
           }
         , { name = "Kardex"
-          , image = ""
+          , image = "/images/Elm.png"
           , url = "https://github.com/Chesare22/Kardex"
           }
         , { name = "OOP School Projects"
-          , image = ""
+          , image = "/images/Java.png"
           , url = "https://github.com/Chesare22/OOP-school-projects"
           }
         , { name = "Timer-PIC18F4550"
-          , image = ""
+          , image = "/images/PIC18F4550.png"
           , url = "https://github.com/Chesare22/Temporizador-PIC18F4550"
           }
         , { name = "Minesweeper"
-          , image = ""
+          , image = "/images/Minesweeper.png"
           , url = "https://github.com/Chesare22/Buscaminas-DIY"
           }
         , { name = "Cryptography algorythms"
-          , image = ""
+          , image = "/images/Python.png"
           , url = "https://github.com/Chesare22/cryprography-algorithms"
           }
         , { name = "Small search engine"
-          , image = ""
+          , image = "/images/php.png"
           , url = "https://github.com/Chesare22/BRIW-Ada3-backend"
           }
         ]
@@ -148,15 +148,15 @@ articles =
     { title = "Articles"
     , slides =
         [ { name = ""
-          , image = ""
+          , image = "/images/JavaScript.png"
           , url = "https://medium.com/soldai/3-features-de-javascript-que-aprend%C3%AD-fuera-de-la-escuela-978e009c9201"
           }
         , { name = "Leetcode solution 2486"
-          , image = ""
+          , image = "/images/LeetCode.png"
           , url = ""
           }
         , { name = "FP Article"
-          , image = ""
+          , image = "/images/Elm.png"
           , url = "https://github.com/Chesare22/FP-Article"
           }
         ]
@@ -168,11 +168,11 @@ miscelaneous =
     { title = "Miscelaneous"
     , slides =
         [ { name = "Fireship app in Elm"
-          , image = ""
+          , image = "/images/Elm.png"
           , url = "https://github.com/Chesare22/Fireship-app-in-elm"
           }
         , { name = "My CV"
-          , image = ""
+          , image = "/images/Elm.png"
           , url = "https://chesare22.github.io/"
           }
         , { name = "Blob Escape"
@@ -215,7 +215,12 @@ type alias Flags =
 
 carousels : List Carousel
 carousels =
-    [ applications ]
+    [ applications
+    , cliHelpers
+    , schoolProjects
+    , articles
+    , miscelaneous
+    ]
 
 
 init : Flags -> ( Model, Cmd Msg )
